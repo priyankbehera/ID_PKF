@@ -3,13 +3,14 @@ from INFtoCOV import inf_to_cov
 from Mupdate import mupdate
 from Tupdate import tupdate
 
-def idpkf(k, Z, u, X, V, R, H, Phi, gamma, Qk, Form, h=None):
+def idpkf(k, Z, w, u, X, V, R, H, Phi, gamma, Qk, Form, h=None):
     """
     Apply Influence Diagram Probabilistic Kalman filter at time k.
 
     Parameters:
     k (int): Desired discrete time.
-    Z (numpy.ndarray): Measurement valudeaces at discrete time k.
+    Z (numpy.ndarray): list of measurements [z1, z2, ..., zm], each of shape (dim_z,1)
+    w (numpy.ndarray): list of weights corresponding to Z_list
     u (numpy.ndarray): An n x 1 vector representing the mean of the state at time k.
     X (numpy.ndarray): If k=0, the covariance matrix of state at time k. If k≠0, the matrix of Gaussian influence diagram arc coefficients.
     V (numpy.ndarray): If k≠0, an n x 1 vector of Gaussian influence diagram conditional variances. Ignored if k=0.
@@ -28,10 +29,23 @@ def idpkf(k, Z, u, X, V, R, H, Phi, gamma, Qk, Form, h=None):
 
     # Get dimensions
     domain = X.shape[0]
-    p = Z.shape[0]
-    
+    dim_z = Z[0].shape[0]
+    m = len(Z)
+
+    # Create stacked measurement vector
+    Z_exp = np.vstack(Z)
+
+    # Create expanded H
+    H_exp = np.kron(np.ones((m, 1)), H)
+
+    # Create expanded R matrix: block diagonal with R / w_i
+    R_exp = np.zeros((m * dim_z, m * dim_z))
+    for i in range(m):
+        R_block = R / w[i]
+        R_exp[i * dim_z:(i+1) * dim_z, i * dim_z:(i+1) * dim_z] = R_block
+
     # Perform measurement update
-    u, V, B = mupdate(k, Z, u, X, V, R, H, h)
+    u, V, B = mupdate(k, Z_exp, u, X, V, R_exp, H_exp, h)
     u_new = u[:domain]
     V_new = V[:domain]
     B_new = B[:domain, :domain]
