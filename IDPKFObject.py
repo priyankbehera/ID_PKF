@@ -24,7 +24,7 @@ class InfluenceDiagramPKF:
         self.Q = np.eye(dim_x)               # process noise covariance
 
         self.history_obs = []
-        self.Form = 1  # 0: influence diagram form, 1: covariance form
+        self.Form = 0  # 0: influence diagram form, 1: covariance form
 
     def predict(self):
         self.u, self.B, self.V = tupdate(self.u, self.B, self.V, self.Phi, self.gamma, self.Q)
@@ -45,7 +45,7 @@ class InfluenceDiagramPKF:
         R_exp = np.zeros((m * self.dim_z, m * self.dim_z))
         for i in range(m):
             R_block = self.R / w_list[i]
-            R_exp[i * self.dim_z:(i+1) * self.dim_z, i*self.dim_z:(i+1) * self.dim_z] = R_block
+            R_exp[i * self.dim_z:(i+1) * self.dim_z, i*self.dim_z:(i+1)*self.dim_z] = R_block
 
         # Measurement update in influence diagram form
         self.u, self.V, self.B = mupdate(0, z_exp, self.u, self.B, self.V, R_exp, H_exp, h)
